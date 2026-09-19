@@ -1,0 +1,28 @@
+# Data (large, regeneratable from Spider — don't commit)
+data/*.jsonl
+spider-data/
+spider_data/
+*.sqlite
+*.zip
+
+# Notebook checkpoints
+.ipynb_checkpoints/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Model checkpoints / adapters (large binary artifacts)
+checkpoints/
+*.gguf
+*.bin
+*.safetensors
+
+# Experiment tracking local files
+mlruns/
+wandb/
+
+# OS
+.DS_Store

@@ -1,4 +1,4 @@
-## Findings — Text-to-SQL Baseline
+## Findings — Phase-0 — Text-to-SQL Baseline
 
 **Base model:** Qwen2.5-Coder-3B-Instruct (4-bit) — chosen over Qwen2.5-Coder-1.5B and Llama-3.2-3B for stronger code/structured-output priors, with ~12.8GB headroom on the T4 (see Task 2 table).
 

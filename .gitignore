@@ -16,6 +16,8 @@ venv/
 
 # Model checkpoints / adapters (large binary artifacts)
 checkpoints/
+adapters/
+outputs/
 *.gguf
 *.bin
 *.safetensors

@@ -1,8 +1,25 @@
+# Fine-tuning
 unsloth
 bitsandbytes
 peft
+trl
+accelerate
+
+# Model / tokenizer / data
 transformers
 datasets
-accelerate
-trl
-torch
+sentencepiece
+
+# Experiment tracking
+wandb
+
+# Hub push (Phase 2 Task 11, Phase 3 handoff)
+huggingface_hub
+
+# Eval / utilities
+pandas
+tqdm
+
+# Notebook environment (Colab ships most of this, listed for local repro)
+jupyter
+ipywidgets

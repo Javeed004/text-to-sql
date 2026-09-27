@@ -3,7 +3,7 @@
 | run_name | dataset_size | lora_rank | lora_alpha | learning_rate | epochs | execution_accuracy | exact_match | notes |
 |---|---|---|---|---|---|---|---|---|
 | Phase 0 (zero-shot baseline) | 0 | N/A | N/A | N/A | 0 | 61.0% | 10.5% | Qwen2.5-Coder-3B 4-bit, no adapter |
-| Phase 1 (first fine-tune) | 1455 | 16 | 32 | 2e-4 | 1 | 69.5% | 38.0% | 1-epoch fast pass; hallucinated-joins fixed, self-join/NOT-IN unchanged, set-ops partial |
+| Phase 1 (first fine-tune) | 1455 | 16 | 32 | 2e-4 | 1 | 75.5% | 38.0% | 1-epoch fast pass; hallucinated-joins fixed, self-join/NOT-IN unchanged, set-ops partial |
 | phase2-variant-a-scale-epoch1 | 9380 | 16 | 32 | 0.0002 | 1 | 73.5% | 43.5% | epochs 1->2, everything else = Phase 1 (dropped from 3->2 after epoch-1 timing probe showed loss already at 0.042 — risk of memorizing the oversampled self-join/NOT-IN rows, not generalizing) — mid-training checkpoint after epoch 1 of 2 |
 | phase2-variant-a-scale-epoch1 | 9380 | 16 | 32 | 0.0002 | 1 | 71.5% | 41.0% | epochs 1->2, everything else = Phase 1 (dropped from 3->2 after epoch-1 timing probe showed loss already at 0.042 — risk of memorizing the oversampled self-join/NOT-IN rows, not generalizing) — mid-training checkpoint after epoch 1 of 2 |
 | phase2-variant-a-scale | 9380 | 16 | 32 | 0.0002 | 2 | 72.5% | 44.0% | epochs 1->2, everything else = Phase 1 (dropped from 3->2 after epoch-1 timing probe showed loss already at 0.042 — risk of memorizing the oversampled self-join/NOT-IN rows, not generalizing) — epoch1->final delta +1.0 pts exec acc |

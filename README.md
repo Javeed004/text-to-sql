@@ -58,9 +58,7 @@ See `results/phase1_summary.md` for the full write-up, and
 └── results/
     ├── phase0_summary.md
     ├── baseline_zero_shot_results.json
-    ├── phase1_summary.md
-    ├── finetuned_v1_eval_results.json
-    └── phase0_vs_phase1_comparison.csv
+    └── phase1_summary.md
 ```
 
 All project code — schema serialization, prompt building, the SQLite

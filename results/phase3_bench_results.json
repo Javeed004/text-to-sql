@@ -1,0 +1,71 @@
+{
+  "f16": [
+    {
+      "run": 1,
+      "status": "success",
+      "elapsed_seconds": 76.8290045261383,
+      "stdout": "| model                          |       size |     params | backend    | ngl |            test |                  t/s |\n| ------------------------------ | ---------: | ---------: | ---------- | --: | --------------: | -------------------: |\n| qwen2 3B F16                   |   5.75 GiB |     3.09 B | CUDA       |  -1 |           pp512 |      2474.13 \u00b1 38.61 |\n| qwen2 3B F16                   |   5.75 GiB |     3.09 B | CUDA       |  -1 |           tg256 |         31.04 \u00b1 2.26 |\n\nbuild: ba0ba54d9 (11258)\n",
+      "stderr": "ggml_cuda_init: found 1 CUDA devices (Total VRAM: 14912 MiB):\n  Device 0: Tesla T4, compute capability 7.5, VMM: yes, VRAM: 14912 MiB\n"
+    },
+    {
+      "run": 2,
+      "status": "success",
+      "elapsed_seconds": 47.014334201812744,
+      "stdout": "| model                          |       size |     params | backend    | ngl |            test |                  t/s |\n| ------------------------------ | ---------: | ---------: | ---------- | --: | --------------: | -------------------: |\n| qwen2 3B F16                   |   5.75 GiB |     3.09 B | CUDA       |  -1 |           pp512 |      2689.62 \u00b1 48.19 |\n| qwen2 3B F16                   |   5.75 GiB |     3.09 B | CUDA       |  -1 |           tg256 |         33.81 \u00b1 2.77 |\n\nbuild: ba0ba54d9 (11258)\n",
+      "stderr": "ggml_cuda_init: found 1 CUDA devices (Total VRAM: 14912 MiB):\n  Device 0: Tesla T4, compute capability 7.5, VMM: yes, VRAM: 14912 MiB\n"
+    },
+    {
+      "run": 3,
+      "status": "success",
+      "elapsed_seconds": 47.94634389877319,
+      "stdout": "| model                          |       size |     params | backend    | ngl |            test |                  t/s |\n| ------------------------------ | ---------: | ---------: | ---------- | --: | --------------: | -------------------: |\n| qwen2 3B F16                   |   5.75 GiB |     3.09 B | CUDA       |  -1 |           pp512 |      2582.58 \u00b1 19.50 |\n| qwen2 3B F16                   |   5.75 GiB |     3.09 B | CUDA       |  -1 |           tg256 |         32.66 \u00b1 1.04 |\n\nbuild: ba0ba54d9 (11258)\n",
+      "stderr": "ggml_cuda_init: found 1 CUDA devices (Total VRAM: 14912 MiB):\n  Device 0: Tesla T4, compute capability 7.5, VMM: yes, VRAM: 14912 MiB\n"
+    }
+  ],
+  "Q8_0": [
+    {
+      "run": 1,
+      "status": "success",
+      "elapsed_seconds": 40.58471632003784,
+      "stdout": "| model                          |       size |     params | backend    | ngl |            test |                  t/s |\n| ------------------------------ | ---------: | ---------: | ---------- | --: | --------------: | -------------------: |\n| qwen2 3B Q8_0                  |   3.05 GiB |     3.09 B | CUDA       |  -1 |           pp512 |      2454.87 \u00b1 73.93 |\n| qwen2 3B Q8_0                  |   3.05 GiB |     3.09 B | CUDA       |  -1 |           tg256 |         53.68 \u00b1 3.63 |\n\nbuild: ba0ba54d9 (11258)\n",
+      "stderr": "ggml_cuda_init: found 1 CUDA devices (Total VRAM: 14912 MiB):\n  Device 0: Tesla T4, compute capability 7.5, VMM: yes, VRAM: 14912 MiB\n"
+    },
+    {
+      "run": 2,
+      "status": "success",
+      "elapsed_seconds": 28.75355052947998,
+      "stdout": "| model                          |       size |     params | backend    | ngl |            test |                  t/s |\n| ------------------------------ | ---------: | ---------: | ---------- | --: | --------------: | -------------------: |\n| qwen2 3B Q8_0                  |   3.05 GiB |     3.09 B | CUDA       |  -1 |           pp512 |      2357.18 \u00b1 26.92 |\n| qwen2 3B Q8_0                  |   3.05 GiB |     3.09 B | CUDA       |  -1 |           tg256 |         51.05 \u00b1 1.46 |\n\nbuild: ba0ba54d9 (11258)\n",
+      "stderr": "ggml_cuda_init: found 1 CUDA devices (Total VRAM: 14912 MiB):\n  Device 0: Tesla T4, compute capability 7.5, VMM: yes, VRAM: 14912 MiB\n"
+    },
+    {
+      "run": 3,
+      "status": "success",
+      "elapsed_seconds": 26.387621879577637,
+      "stdout": "| model                          |       size |     params | backend    | ngl |            test |                  t/s |\n| ------------------------------ | ---------: | ---------: | ---------- | --: | --------------: | -------------------: |\n| qwen2 3B Q8_0                  |   3.05 GiB |     3.09 B | CUDA       |  -1 |           pp512 |      2426.18 \u00b1 27.80 |\n| qwen2 3B Q8_0                  |   3.05 GiB |     3.09 B | CUDA       |  -1 |           tg256 |         55.44 \u00b1 0.49 |\n\nbuild: ba0ba54d9 (11258)\n",
+      "stderr": "ggml_cuda_init: found 1 CUDA devices (Total VRAM: 14912 MiB):\n  Device 0: Tesla T4, compute capability 7.5, VMM: yes, VRAM: 14912 MiB\n"
+    }
+  ],
+  "Q4_K_M": [
+    {
+      "run": 1,
+      "status": "success",
+      "elapsed_seconds": 28.056085109710693,
+      "stdout": "| model                          |       size |     params | backend    | ngl |            test |                  t/s |\n| ------------------------------ | ---------: | ---------: | ---------- | --: | --------------: | -------------------: |\n| qwen2 3B Q4_K - Medium         |   1.79 GiB |     3.09 B | CUDA       |  -1 |           pp512 |      2327.35 \u00b1 57.38 |\n| qwen2 3B Q4_K - Medium         |   1.79 GiB |     3.09 B | CUDA       |  -1 |           tg256 |         66.40 \u00b1 2.58 |\n\nbuild: ba0ba54d9 (11258)\n",
+      "stderr": "ggml_cuda_init: found 1 CUDA devices (Total VRAM: 14912 MiB):\n  Device 0: Tesla T4, compute capability 7.5, VMM: yes, VRAM: 14912 MiB\n"
+    },
+    {
+      "run": 2,
+      "status": "success",
+      "elapsed_seconds": 23.847437620162964,
+      "stdout": "| model                          |       size |     params | backend    | ngl |            test |                  t/s |\n| ------------------------------ | ---------: | ---------: | ---------- | --: | --------------: | -------------------: |\n| qwen2 3B Q4_K - Medium         |   1.79 GiB |     3.09 B | CUDA       |  -1 |           pp512 |      2264.55 \u00b1 26.54 |\n| qwen2 3B Q4_K - Medium         |   1.79 GiB |     3.09 B | CUDA       |  -1 |           tg256 |         61.30 \u00b1 1.11 |\n\nbuild: ba0ba54d9 (11258)\n",
+      "stderr": "ggml_cuda_init: found 1 CUDA devices (Total VRAM: 14912 MiB):\n  Device 0: Tesla T4, compute capability 7.5, VMM: yes, VRAM: 14912 MiB\n"
+    },
+    {
+      "run": 3,
+      "status": "success",
+      "elapsed_seconds": 22.960328340530396,
+      "stdout": "| model                          |       size |     params | backend    | ngl |            test |                  t/s |\n| ------------------------------ | ---------: | ---------: | ---------- | --: | --------------: | -------------------: |\n| qwen2 3B Q4_K - Medium         |   1.79 GiB |     3.09 B | CUDA       |  -1 |           pp512 |      2270.32 \u00b1 41.77 |\n| qwen2 3B Q4_K - Medium         |   1.79 GiB |     3.09 B | CUDA       |  -1 |           tg256 |         65.14 \u00b1 0.44 |\n\nbuild: ba0ba54d9 (11258)\n",
+      "stderr": "ggml_cuda_init: found 1 CUDA devices (Total VRAM: 14912 MiB):\n  Device 0: Tesla T4, compute capability 7.5, VMM: yes, VRAM: 14912 MiB\n"
+    }
+  ]
+}

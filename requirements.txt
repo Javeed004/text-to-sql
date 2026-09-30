@@ -19,6 +19,16 @@ huggingface_hub
 # Eval / utilities
 pandas
 tqdm
+requests          # Phase 3: llama-server /completion calls and /health polling
+
+# GGUF conversion (Phase 3)
+gguf              # used by llama.cpp's convert_hf_to_gguf.py
+# NOTE: do NOT `pip install -r llama.cpp/requirements.txt` in the same
+# environment as training. It pins older transformers/numpy/protobuf/
+# huggingface-hub and breaks Unsloth, wandb and others. Merge and save the
+# model first, then install only what the converter needs (gguf, sentencepiece)
+# or restart the runtime after installing the full file.
+# llama.cpp itself is cloned and built inside the Phase 3 notebook, not pip-installed.
 
 # Notebook environment (Colab ships most of this, listed for local repro)
 jupyter

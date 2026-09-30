@@ -1,0 +1,44 @@
+{
+  "accuracy": {
+    "f16": {
+      "execution_accuracy": 0.745,
+      "exact_match": 0.455,
+      "n": 200
+    },
+    "Q8_0": {
+      "execution_accuracy": 0.735,
+      "exact_match": 0.455,
+      "n": 200
+    },
+    "Q4_K_M": {
+      "execution_accuracy": 0.755,
+      "exact_match": 0.45,
+      "n": 200
+    }
+  },
+  "sec_per_example": {
+    "f16": 1.018264752626419,
+    "Q8_0": 0.691541258096695,
+    "Q4_K_M": 0.5594975924491883
+  },
+  "failure_patterns": {
+    "f16": {
+      "Hallucinated/unnecessary joins": "SELECT avg(LifeExpectancy) FROM country WHERE Region  =  \"Central Africa\"",
+      "Self-join failures": "SELECT T3.name FROM friend AS T1 JOIN highschooler AS T2 ON T1.student_id  =  T2.id JOIN highschooler AS T3 ON T1.friend_id  =  T3.id WHERE T2.name  =  \"Kyle\"",
+      "Set operations replaced with JOIN/WHERE": "SELECT T1.CountryId ,  T1.CountryName FROM countries AS T1 JOIN car_makers AS T2 ON T1.CountryId  =  T2.Country WHERE T2.Maker  >  3 UNION SELECT T1.CountryId ,  T1.CountryName FROM countries AS T1 JOIN car_names AS T2 ON T1.CountryId  =  T2.MakeId WHERE T2.Make  =  'Fiat'",
+      "!= vs NOT IN confusion": "SELECT major ,  age FROM Student EXCEPT SELECT T1.major ,  T1.age FROM Student AS T1 JOIN Has_Pet AS T2 ON T1.StuID  =  T2.StuID JOIN Pets AS T3 ON T2.PetID  =  T3.PetID WHERE T3.pet_type  =  \"cat\""
+    },
+    "Q8_0": {
+      "Hallucinated/unnecessary joins": "SELECT avg(LifeExpectancy) FROM country WHERE Region  =  \"Central Africa\"",
+      "Self-join failures": "SELECT T3.name FROM friend AS T1 JOIN highschooler AS T2 ON T1.student_id  =  T2.id JOIN highschooler AS T3 ON T1.friend_id  =  T3.id WHERE T2.name  =  \"Kyle\"",
+      "Set operations replaced with JOIN/WHERE": "SELECT T1.CountryId ,  T1.CountryName FROM countries AS T1 JOIN car_makers AS T2 ON T1.CountryId  =  T2.Country WHERE T2.Maker  >  3 UNION SELECT T1.CountryId ,  T1.CountryName FROM countries AS T1 JOIN model_list AS T2 ON T1.CountryId  =  T2.Maker JOIN car_names AS T3 ON T2.Model  =  T3.Model WHERE T3.Make  =  'Fiat'",
+      "!= vs NOT IN confusion": "SELECT major ,  age FROM Student EXCEPT SELECT T1.major ,  T1.age FROM Student AS T1 JOIN Has_Pet AS T2 ON T1.StuID  =  T2.StuID JOIN Pets AS T3 ON T2.PetID  =  T3.PetID WHERE T3.pet_type  =  \"cat\""
+    },
+    "Q4_K_M": {
+      "Hallucinated/unnecessary joins": "SELECT avg(LifeExpectancy) FROM country WHERE Region  =  \"Central Africa\"",
+      "Self-join failures": "SELECT T3.name FROM friend AS T1 JOIN highschooler AS T2 ON T1.student_id  =  T2.id JOIN highschooler AS T3 ON T1.friend_id  =  T3.id WHERE T2.name  =  'Kyle'",
+      "Set operations replaced with JOIN/WHERE": "SELECT T1.CountryId ,  T1.CountryName FROM countries AS T1 JOIN car_makers AS T2 ON T1.CountryId  =  T2.Country WHERE T2.Maker  >  3 UNION SELECT T1.CountryId ,  T1.CountryName FROM countries AS T1 JOIN car_makers AS T2 ON T1.CountryId  =  T2.Country JOIN model_list AS T3 ON T2.Id  =  T3.Maker WHERE T3.Model  =  'Fiat'",
+      "!= vs NOT IN confusion": "SELECT major ,  age FROM Student EXCEPT SELECT T1.major ,  T1.age FROM Student AS T1 JOIN Has_Pet AS T2 ON T1.StuID  =  T2.StuID JOIN Pets AS T3 ON T2.PetID  =  T3.PetID WHERE T3.pet_type  =  \"cat\""
+    }
+  }
+}

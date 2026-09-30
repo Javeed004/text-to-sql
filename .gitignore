@@ -6,13 +6,33 @@ spider-data/
 data/train_augmented_phase2.jsonl
 
 # Eval results — regenerable by rerunning the harness
+# (curated copies live in results/ and ARE committed)
 eval_results/*.json
 !eval_results/.gitkeep
+# Scratch outputs a notebook writes to its working directory before you
+# move them into results/ (anchored to the repo root so results/ is unaffected)
+/eval_*_results.json
+/baseline_zero_shot_results.json
+/finetuned_*_eval_results.json
 
 # Adapters/checkpoints — live on HF Hub / Drive, not git
 adapters/
 checkpoints/
 outputs/
+
+# Phase 3: merged weights and GGUF files (multi-GB, regenerable from the
+# Hub adapter via notebooks/phase3_quantization.ipynb)
+merged_model/
+*.gguf
+*.safetensors
+*.bin
+
+# Phase 3: llama.cpp is cloned and built inside the notebook, not vendored
+llama.cpp/
+
+# Phase 3: server logs and scratch prompt files
+llama_server.log
+test_prompt.txt
 
 # Colab/Jupyter
 .ipynb_checkpoints/

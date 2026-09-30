@@ -1,98 +1,73 @@
-# Fine-Tuned Text-to-SQL Engine (LoRA/QLoRA)
+# 🧠 Fine-Tuned Text-to-SQL Engine — QLoRA on Spider, quantized to GGUF
 
-Fine-tuning a small open-weight model on Spider to outperform its own zero-shot
-baseline on text-to-SQL generation, with a quantified before/after comparison
-via an execution-accuracy eval harness.
+Fine-tuning a small open-weight model (Qwen2.5-Coder-3B) on Spider to beat its own zero-shot baseline on text-to-SQL, measured by a SQL-execution eval harness, then merged and quantized for self-hosted serving.
 
-Full project plan: see `docs/PRD.md`, `docs/phase-0-tasks.md`,
-`docs/phase-1-tasks.md`, and `docs/phase-2-tasks.md`.
+Full project plan: `docs/PRD.md` and `docs/phase-0-tasks.md` through `docs/phase-3-tasks.md`.
 
-## Status
+## 🚀 Features
 
-**Phase 0 (Setup & Baseline) — complete.**
+- 🎯 **Execution-based evaluation** — generated SQL is run against the real Spider SQLite databases (read-only) and result sets are compared, with exact match as a secondary metric.
+- 🔁 **Model-agnostic harness** — `run_eval_harness` takes any `(question, schema_text) -> sql` function, so the same code scored the base model, LoRA checkpoints and GGUF servers.
+- 🧪 **QLoRA fine-tuning with Unsloth** — tracked in Weights & Biases, with resumable checkpoints across Colab disconnects.
+- 🔍 **Failure-pattern review** — four named hard patterns (hallucinated joins, self-joins, set operations, NOT IN) rechecked at every phase, because aggregate accuracy alone hid what changed.
+- 📦 **Merge and quantize** — LoRA merged into fp16 weights, converted to GGUF, quantized to Q8_0 and Q4_K_M, and re-evaluated.
 
-- Base model: `unsloth/Qwen2.5-Coder-3B-Instruct-bnb-4bit`
-- Dataset: Spider (train/val/test splits, dev set held out as test)
-- Zero-shot baseline execution accuracy: **61.0%** (122/200, fixed-seed subset)
-- Zero-shot baseline exact match: **10.5%**
+## 📊 Results so far
 
-See `results/phase0_summary.md` for the full write-up, and
-`results/baseline_zero_shot_results.json` for per-example results.
+| Stage | Exec. accuracy | Exact match | Notes |
+|---|---|---|---|
+| Phase 0 — zero-shot baseline | 61.0% | 10.5% | 200-example Spider dev subset, seed 42 |
+| Phase 1 — first fine-tune | 75.5% | 38.0% | r=16/a=32, 1,455 examples, 1 epoch |
+| Phase 2 — selected variant (a) | 72.5% | 43.5% | 9,380 augmented examples, 2 epochs |
+| Phase 3 — f16 GGUF | 74.5% | 45.5% | 6.18 GB, 32.5 tok/s |
+| Phase 3 — Q8_0 | 73.5% | 45.5% | 3.29 GB, 53.4 tok/s |
+| Phase 3 — **Q4_K_M (shipping)** | 75.5% | 45.0% | 1.93 GB, 64.3 tok/s |
 
-**Phase 1 (First Fine-Tune) — complete.**
+The test set is 200 examples, so the 95% margin of error is about ±6 points. Differences of a few points between rows, including Phase 1 vs Phase 2 and the three Phase 3 variants, are within noise. Exact match and the failure-pattern reviews are the more informative signals. See each phase summary for detail.
 
-- QLoRA fine-tune: `r=16`, `lora_alpha=32`, all 7 attention+MLP projections,
-  1 epoch over 1,455 filtered Spider training examples, ~13.3 min on a T4
-- Execution accuracy: 61.0% → **75.5%** (+14.5 pts)
-- Exact match: 10.5% → **38.0%** (+27.5 pts)
-- Failure-pattern review: 1 of Phase 0's 4 named hard patterns
-  (hallucinated joins) clearly fixed; self-joins and `!=`/`NOT IN` confusion
-  unchanged; set-operations-as-JOIN partially improved with a newly
-  introduced join artifact — full breakdown in `results/phase1_summary.md`
-- Adapter checkpoint: `qwen2.5-coder-3b-lora-r16-a32-fastpass-v1`
-  (saved to Drive; not committed to this repo — see `.gitignore`)
+## 🏗️ How it works
 
-See `results/phase1_summary.md` for the full write-up, and
-`results/finetuned_v1_eval_results.json` for per-example results.
+```mermaid
+flowchart LR
+    A[Spider train/dev] --> B[schema_to_text + build_prompt]
+    B --> C[Unsloth QLoRA fine-tune]
+    C --> D[LoRA adapter on HF Hub]
+    D --> E[Merge into fp16 base]
+    E --> F[convert_hf_to_gguf f16]
+    F --> G[llama-quantize Q8_0 / Q4_K_M]
+    G --> H[llama-server]
+    H --> I[run_eval_harness on SQLite DBs]
+    B --> I
+```
 
-**Phase 2 (Iterate on Data & Hyperparameters) — complete.**
+1. Each Spider example becomes a chat-template prompt: system message, schema as `CREATE TABLE` text plus FK comments, and the question.
+2. The model generates SQL, `extract_sql` strips fences and explanation, and the harness executes both generated and gold SQL on the example's database.
+3. Rows are compared as sets of tuples (order-insensitive across rows, positional across columns).
 
-- Scaled to the full Spider training pool (6,440 examples) plus targeted
-  oversampling of the two patterns Phase 1 left completely unmoved
-  (self-joins, NOT-IN/set-exclusion), for a 9,380-example augmented set
-- Swept 3 LoRA hyperparameter variants, one axis changed at a time off
-  Phase 1's baseline: scale (more epochs), capacity (`r=32/alpha=64`), and
-  stability (lower learning rate)
-
-| Run | Dataset | LoRA | Epochs | LR | Exec. Acc. | Exact Match |
-|---|---|---|---|---|---|---|
-| Phase 1 | 1,455 | r=16/a=32 | 1 | 2e-4 | 75.5% | 38.0% |
-| Variant (a) — scale | 9,380 | r=16/a=32 | 2 | 2e-4 | **72.5%** | **43.5%** |
-| Variant (b) — rank | 9,380 | r=32/a=64 | 2 | 2e-4 | 73.0% | 46.0% |
-| Variant (c) — low LR | 9,380 | r=16/a=32 | 2 | 5e-5 | 66.5% | 42.5% |
-
-- **Selected checkpoint: variant (a)** — chosen over the marginally
-  higher-scoring variant (b) (a 0.5pt aggregate gap, within the test set's
-  noise margin) because the failure-pattern review found (a) fixed 3 of
-  Phase 1's 4 named hard patterns (self-joins, NOT-IN, hallucinated joins)
-  vs. (b)'s 2, with (b) regressing on NOT-IN via a hallucinated schema
-  column name that recurred elsewhere in a broader failure sample
-- Set-operations remain unresolved in every variant — each now produces a
-  real `UNION`/`INTERSECT` shell (an improvement over Phase 1) but breaks
-  the second branch's logic differently each time; flagged as an open item
-  for Phase 3, not silently dropped
-- A new, previously unflagged pattern surfaced during error analysis:
-  `model_list`/`car_names` table confusion on car/model questions —
-  documented as open, not yet resolved
-- Adapter pushed to Hugging Face Hub — see `models/model_card.md` for the
-  link, full config, and selection rationale
-
-See `results/phase2_summary.md` for the full write-up,
-`results/experiment-log.md` for the complete run-by-run comparison table,
-and `configs/phase2_variants.py` for the exact variant configs.
-
-## Repo layout
+## 📦 Repo layout
 
 ```
-.
+Text-to-SQL/
 ├── README.md
 ├── requirements.txt
-├── .gitignore
+├── .gitignore                       # excludes data/, adapters, checkpoints, *.gguf
 ├── docs/
 │   ├── PRD.md
 │   ├── phase-0-tasks.md
 │   ├── phase-1-tasks.md
-│   └── phase-2-tasks.md
+│   ├── phase-2-tasks.md
+│   └── phase-3-tasks.md
 ├── configs/
-│   └── phase2_variants.py        # Phase 2's 3 hyperparameter variants + final results
+│   └── phase2_variants.py           # Phase 2's 3 hyperparameter variants + results
 ├── notebooks/
-│   ├── phase0_setup.ipynb        # Phase 0: pipeline, harness, zero-shot baseline
-│   ├── phase1_finetuning.ipynb   # Phase 1: LoRA config, training, eval, comparison
-│   └── phase2_iteration.ipynb    # Phase 2: full-dataset sweep, curation, checkpoint selection
-├── data/                          # NOT committed — see .gitignore and data/README.md
+│   ├── phase0_setup.ipynb           # pipeline, harness, zero-shot baseline
+│   ├── phase1_finetuning.ipynb      # first QLoRA fine-tune and comparison
+│   ├── phase2_iteration.ipynb       # full-dataset sweep, curation, checkpoint selection
+│   └── phase3_quantization.ipynb    # merge, GGUF, quantize, eval, benchmark
+├── data/                            # NOT committed — see data/README.md
 │   └── README.md
 ├── models/
-│   └── model_card.md             # Final Phase 2 adapter — HF Hub link, config, rationale
+│   └── model_card.md                # Phase 2 adapter: HF Hub link, config, rationale
 └── results/
     ├── phase0_summary.md
     ├── baseline_zero_shot_results.json
@@ -100,95 +75,110 @@ and `configs/phase2_variants.py` for the exact variant configs.
     ├── finetuned_v1_eval_results.json
     ├── phase2_summary.md
     ├── experiment-log.md
-    ├── phase2_a_epoch1_eval_results.json
-    ├── phase2_a_final_eval_results.json
+    ├── phase2_{a,b,c}_epoch1_eval_results.json
+    ├── phase2_{a,b,c}_final_eval_results.json
     ├── phase2_a_final_recovered_eval_results.json
-    ├── phase2_b_epoch1_eval_results.json
-    ├── phase2_b_final_eval_results.json
-    ├── phase2_c_epoch1_eval_results.json
-    └── phase2_c_final_eval_results.json
+    ├── phase3_summary.md
+    ├── phase3_f16_eval_results.json
+    ├── phase3_Q8_0_eval_results.json
+    ├── phase3_Q4_K_M_eval_results.json
+    ├── phase3_bench_results.json
+    ├── phase3_quant_eval_summary.json
+    ├── phase3_quantization_tradeoff.csv
+    └── phase3_quantization_tradeoff.md
 ```
 
-(LoRA adapter weights and training checkpoints themselves — Phase 1's
-adapter and Phase 2's per-variant/per-epoch checkpoints — are **not**
-committed; see `.gitignore`. Phase 2's final adapter lives on Hugging Face
-Hub, linked from `models/model_card.md`.)
+Adapter weights, checkpoints and GGUF files are not committed. The Phase 2 adapter is on Hugging Face Hub (`JaveedHabeeb/text-to-sql-qwen2.5-coder-3b-phase2`). GGUF files are regenerated by `notebooks/phase3_quantization.ipynb`.
 
-All project code — schema serialization, prompt building, the SQLite
-execution harness, LoRA/training config, and the comparison/eval functions —
-lives directly in each phase's notebook rather than being split into a
-separate package. This keeps each phase readable top-to-bottom as a single,
-self-contained artifact. Each phase's notebook re-defines the prior phase's
-core functions at the top (fresh Colab runtimes don't carry state between
-sessions) before adding its own. Key functions:
+All project code lives in each phase's notebook. Each notebook redefines the prior phase's core functions at the top, since fresh Colab runtimes carry no state. Key functions:
 
 - `schema_to_text(db_id, schema_lookup)` / `build_prompt(schema_text, question, gold_sql=None)`
 - `get_db_connection(db_id)` / `run_sql(conn, sql_string)`
 - `execution_match(conn, generated_sql, gold_sql)` / `exact_match(generated_sql, gold_sql)`
 - `run_eval_harness(test_examples, generate_fn, results_path)`
-- `generate_sql(question, schema_text, model, tokenizer)` — the swappable
-  inference call; same signature whether `model` is the raw base model, a
-  LoRA-adapted checkpoint, or (in later phases) a quantized GGUF version
-- `check_failure_patterns(model, tokenizer, label)` — added in Phase 2;
-  reruns Phase 1's four named hard examples against any checkpoint for a
-  fixed/unchanged/broken-differently read, since the aggregate accuracy
-  alone repeatedly proved insufficient to judge whether fine-tuning
-  actually helped on the patterns that matter
-- `log_experiment_row(config, exec_acc, exact_match, notes)` — added in
-  Phase 2; appends a run to both `results/experiment-log.md` and a W&B
-  Table so every sweep run lands in the comparison table automatically
+- `generate_sql(question, schema_text, model, tokenizer)` — in-process inference
+- `llama_server_generate_sql(question, schema_text, port)` — same contract, via `llama-server` (Phase 3)
+- `check_failure_patterns(model, tokenizer, label)` — reruns the four named hard examples
+- `log_experiment_row(config, exec_acc, exact_match, notes)` — appends to the experiment log and a W&B Table
 
-## Setup
+## ⚙️ Setup
+
+The notebooks target Google Colab with a T4 GPU.
 
 ```bash
 pip install -r requirements.txt
-```
-
-Spider data (question/SQL/schema) loads via Hugging Face `datasets`
-(`xlangai/spider`). The per-database `.sqlite` files are pulled separately
-via Git LFS from a community mirror (`minktn/spider-data`) since the
-official dataset repo only ships parquet:
-
-```bash
 git lfs install
 git lfs clone https://huggingface.co/datasets/minktn/spider-data
 ```
 
-Phase 1 onward also needs a Weights & Biases account for experiment
-tracking. Store your API key as a Colab secret named `WANDB_API_KEY`
-(never hardcode it) — the notebook reads it via
-`google.colab.userdata.get("WANDB_API_KEY")`.
+Question/SQL/schema data loads via `datasets` (`xlangai/spider`). The per-database `.sqlite` files come from the `minktn/spider-data` mirror because the official dataset repo only ships parquet.
 
-Phase 2 onward also needs a Hugging Face account with write access, for
-pushing the final adapter to the Hub (`huggingface_hub`, already in
-`requirements.txt`).
+For Phase 3, clone and build llama.cpp inside the notebook:
 
-## Usage
+```bash
+git clone https://github.com/ggerganov/llama.cpp
+cmake -B llama.cpp/build -S llama.cpp -DGGML_CUDA=ON
+cmake --build llama.cpp/build --config Release -j2 --target llama-quantize
+cmake --build llama.cpp/build --config Release -j2 --target llama-server
+cmake --build llama.cpp/build --config Release -j2 --target llama-bench
+```
 
-Open the relevant notebook in Colab or Jupyter and run top to bottom:
+Build targets one at a time with limited jobs. An unlimited `-j` CUDA build runs out of Colab RAM.
 
-- `notebooks/phase0_setup.ipynb` — environment setup, model selection,
-  preprocessing, eval harness, zero-shot baseline
-- `notebooks/phase1_finetuning.ipynb` — LoRA config, training, adapter
-  reload sanity check, formal eval on the identical baseline test subset,
-  before/after comparison table, failure-pattern review
-- `notebooks/phase2_iteration.ipynb` — full-dataset environment, targeted
-  self-join/NOT-IN curation, running experiment comparison table, 3-variant
-  hyperparameter sweep (each checkpointed to Drive and resumable across
-  Colab disconnects), failure-pattern error analysis, final checkpoint
-  selection and Hugging Face Hub push
+## ▶️ Running
 
-`run_eval_harness` takes any `generate_fn` with the signature
-`(question: str, schema_text: str) -> str`, so swapping in a new checkpoint
-(fine-tuned, a hyperparameter-sweep variant, or eventually a quantized
-version) never requires touching the harness code itself — only the
-`generate_fn` passed into it changes between phases.
+Open the notebook for the phase you want in Colab and run top to bottom:
 
-## Roadmap
+- `phase0_setup.ipynb` — environment, preprocessing, harness, zero-shot baseline
+- `phase1_finetuning.ipynb` — LoRA config, training, formal eval, comparison
+- `phase2_iteration.ipynb` — curation, 3-variant sweep, error analysis, Hub push
+- `phase3_quantization.ipynb` — merge, GGUF conversion, quantization, per-variant eval, benchmark
+
+In Phase 3, run the merge before `pip install -r llama.cpp/requirements.txt`, which downgrades `transformers`. Restart the runtime after that install. Serve a model on any port except 8080 (Colab uses it), for example `llama-server -m text2sql-Q4_K_M.gguf --port 8091 -c 2048`.
+
+## 🔧 Environment variables
+
+| Variable | Required | Default | Purpose |
+|---|---|---|---|
+| `WANDB_API_KEY` | Phase 1+ | none | Colab secret read via `google.colab.userdata.get`; authenticates W&B logging |
+
+Pushing to Hugging Face Hub (Phase 2) needs an account with write access.
+
+## 🧪 Testing
+
+There is no unit-test suite. Correctness is checked by the harness itself:
+
+- **Perfect and broken generators.** A generator returning gold SQL should score ~100%, and one returning `SELECT 1;` should score ~0% (Phase 0).
+- **Same 200-example subset in every phase.** `random.seed(42); random.sample(test_formatted, 200)`.
+- **Merge check.** The saved merged model must contain no tensor names with `lora` or `base_layer`, and no `adapter_config.json`.
+- **Server smoke test.** Each `llama-server` variant answers a trivial question before the 200-example run. A run that finishes in seconds means the server was not answering.
+
+## 🛠️ Tech stack
+
+- **Training:** Unsloth, PEFT, bitsandbytes, TRL, Transformers, Datasets, Accelerate
+- **Tracking:** Weights & Biases
+- **Evaluation:** Python `sqlite3`, pandas, tqdm
+- **Quantization and serving:** llama.cpp (`convert_hf_to_gguf.py`, `llama-quantize`, `llama-server`, `llama-bench`), gguf, requests
+- **Hosting:** Hugging Face Hub (adapter)
+
+## ⚠️ Known limitations
+
+- **Small test set.** 200 examples give a ±6 point margin, so small differences between checkpoints or quantization levels cannot be resolved.
+- **Set operations are unresolved.** `UNION`/`INTERSECT` queries get the right shell but the wrong second branch, in every Phase 2 variant.
+- **Open pattern.** `model_list`/`car_names` table confusion on car/model questions.
+- **Phase 2 did not beat Phase 1 on aggregate execution accuracy** (72.5% vs 75.5%, within noise); it improved exact match and fixed more of the named hard patterns, which is why it was selected.
+- **Latency figures are single-machine.** Confirm the hardware (CPU or GPU) before quoting the Phase 3 speed numbers; peak memory was not captured.
+- **Text-to-SQL scope.** SQLite/Postgres-style syntax, single-turn questions, disposable databases only.
+
+## 🌐 Live demo
+
+Not deployed yet. Phase 4 will serve the Q4_K_M model behind a FastAPI wrapper.
+
+## 🗺️ Roadmap
 
 - [x] Phase 0 — Setup & Baseline
 - [x] Phase 1 — First Fine-Tune
 - [x] Phase 2 — Iterate on Data & Hyperparameters
-- [ ] Phase 3 — Merge, Quantize, Benchmark
+- [x] Phase 3 — Merge, Quantize, Benchmark
 - [ ] Phase 4 — Serve It
 - [ ] Phase 5 — Polish & Integrate

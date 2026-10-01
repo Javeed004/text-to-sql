@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Text-to-SQL demo</title>
+<style>
+  :root { --bg:#fff; --fg:#1b1b1b; --muted:#666; --line:#d9d9d9; --accent:#2457d6; --err:#b3261e; --code:#f4f4f5; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#16171a; --fg:#e8e8ea; --muted:#9a9aa2; --line:#33353b; --accent:#7ea2ff; --err:#ff8a80; --code:#1f2126; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:24px 16px; background:var(--bg); color:var(--fg);
+         font:15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 820px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  p.sub { color: var(--muted); margin: 0 0 20px; }
+  label { display:block; font-weight:600; margin: 14px 0 4px; }
+  select, input, textarea, button { width:100%; font:inherit; color:inherit; background:var(--bg);
+         border:1px solid var(--line); border-radius:6px; padding:8px 10px; }
+  textarea { font-family: ui-monospace, Consolas, monospace; font-size: 13px; resize: vertical; }
+  button { margin-top:16px; background:var(--accent); color:#fff; border:0; cursor:pointer; font-weight:600; }
+  button:disabled { opacity:.6; cursor:wait; }
+  details { margin-top: 12px; }
+  summary { cursor:pointer; color:var(--muted); }
+  #status { margin-top:12px; color:var(--muted); min-height:1.5em; }
+  #status.error, .error { color: var(--err); }
+  pre { background:var(--code); padding:12px; border-radius:6px; overflow-x:auto; margin:6px 0 0; }
+  .tablewrap { overflow-x:auto; margin-top:6px; }
+  table { border-collapse: collapse; min-width: 100%; }
+  th, td { border:1px solid var(--line); padding:4px 10px; text-align:left; }
+  th { background: var(--code); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Text-to-SQL</h1>
+  <p class="sub">A fine-tuned Qwen2.5-Coder-3B (Q4_K_M) turns a question into SQL and runs it on a throwaway SQLite database.</p>
+
+  <label for="example">Example</label>
+  <select id="example"></select>
+
+  <label for="schema">Schema</label>
+  <textarea id="schema" rows="7" spellcheck="false"></textarea>
+
+  <details>
+    <summary>Sample data (used only to run the query, never sent to the model)</summary>
+    <textarea id="data" rows="5" spellcheck="false"></textarea>
+  </details>
+
+  <label for="question">Question</label>
+  <input id="question" type="text" maxlength="500">
+
+  <button id="go">Generate SQL</button>
+  <div id="status" aria-live="polite"></div>
+
+  <div id="out" hidden>
+    <label>Generated SQL</label>
+    <pre id="sql"></pre>
+    <label>Result</label>
+    <div id="result"></div>
+  </div>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let examples = [];
+
+function loadExample(i) {
+  const ex = examples[i];
+  if (!ex) return;
+  $("schema").value = ex.schema;
+  $("data").value = ex.data;
+  $("question").value = ex.question;
+}
+
+async function init() {
+  try {
+    examples = await (await fetch("/examples")).json();
+  } catch (e) { /* the page still works with a pasted schema */ }
+  examples.forEach((ex, i) => {
+    const o = document.createElement("option");
+    o.value = i; o.textContent = ex.name;
+    $("example").appendChild(o);
+  });
+  loadExample(0);
+}
+
+function renderResult(r) {
+  const box = $("result");
+  box.replaceChildren();
+  if (!r) { box.textContent = "Not executed."; return; }
+  if (r.error) {
+    const d = document.createElement("div");
+    d.className = "error"; d.textContent = r.error;
+    box.appendChild(d); return;
+  }
+  const wrap = document.createElement("div"); wrap.className = "tablewrap";
+  const table = document.createElement("table");
+  const head = table.createTHead().insertRow();
+  r.columns.forEach((c) => { const th = document.createElement("th"); th.textContent = c; head.appendChild(th); });
+  const body = table.createTBody();
+  r.rows.forEach((row) => {
+    const tr = body.insertRow();
+    row.forEach((v) => { tr.insertCell().textContent = v === null ? "NULL" : String(v); });
+  });
+  wrap.appendChild(table); box.appendChild(wrap);
+  const note = document.createElement("div");
+  note.style.color = "var(--muted)";
+  note.textContent = r.rows.length + " row(s)" + (r.truncated ? " (truncated)" : "");
+  box.appendChild(note);
+}
+
+async function generate() {
+  const btn = $("go"), status = $("status");
+  btn.disabled = true; status.className = ""; status.textContent = "Generating...";
+  $("out").hidden = true;
+  // Free CPU hosts are slow, and may need to wake the model up first.
+  const slow = setTimeout(() => {
+    status.textContent = "Still working. On a free CPU host the first request can take a minute while the model wakes up.";
+  }, 6000);
+  const ctrl = new AbortController();
+  const abort = setTimeout(() => ctrl.abort(), 300000);
+  try {
+    const resp = await fetch("/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        schema: $("schema").value,
+        data_sql: $("data").value,
+        question: $("question").value,
+      }),
+      signal: ctrl.signal,
+    });
+    if (!resp.ok) {
+      let detail = resp.status + " " + resp.statusText;
+      try { const j = await resp.json(); if (j.detail) detail = typeof j.detail === "string" ? j.detail : JSON.stringify(j.detail); } catch (e) {}
+      throw new Error(detail);
+    }
+    const body = await resp.json();
+    $("sql").textContent = body.sql;
+    renderResult(body.execution_result);
+    $("out").hidden = false;
+    status.textContent = "Generated in " + (body.latency_ms / 1000).toFixed(1) + " s";
+  } catch (e) {
+    status.className = "error";
+    status.textContent = e.name === "AbortError" ? "Timed out after 5 minutes." : "Error: " + e.message;
+  } finally {
+    clearTimeout(slow); clearTimeout(abort); btn.disabled = false;
+  }
+}
+
+$("example").addEventListener("change", (e) => loadExample(e.target.value));
+$("go").addEventListener("click", generate);
+init();
+</script>
+</body>
+</html>

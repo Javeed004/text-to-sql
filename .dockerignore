@@ -1,0 +1,15 @@
+.venv
+.git
+__pycache__
+*.pyc
+.pytest_cache
+data
+results
+notebooks
+docs
+spider_data
+models
+*.gguf
+tests
+scripts
+notes

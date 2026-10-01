@@ -1,9 +1,17 @@
 # Data — regenerable from Spider + preprocessing code
 data/*.jsonl
 data/spider-data/
+spider_data/
 data/*.sqlite
 spider-data/
 data/train_augmented_phase2.jsonl
+
+# Virtual Environments — not vendored, can be recreated from requirements.txt
+.venv/
+venv/
+env/
+ENV/
+.python-version
 
 # Eval results — regenerable by rerunning the harness
 # (curated copies live in results/ and ARE committed)
@@ -22,6 +30,8 @@ outputs/
 
 # Phase 3: merged weights and GGUF files (multi-GB, regenerable from the
 # Hub adapter via notebooks/phase3_quantization.ipynb)
+# Phase 4: this also keeps models/text2sql-Q4_K_M.gguf out of git. The container
+# mounts it or downloads it from the Hub at start (see start.sh).
 merged_model/
 *.gguf
 *.safetensors
@@ -30,17 +40,30 @@ merged_model/
 # Phase 3: llama.cpp is cloned and built inside the notebook, not vendored
 llama.cpp/
 
-# Phase 3: server logs and scratch prompt files
+# Logs and scratch prompt files
+*.log
 llama_server.log
 test_prompt.txt
+
+# Phase 4: test and tooling caches, local tools, scratch request bodies
+.pytest_cache/
+cloudflared.exe
+body.json
 
 # Colab/Jupyter
 .ipynb_checkpoints/
 *.pyc
 __pycache__/
 
+# OS junk
+.DS_Store
+Thumbs.db
+
 # Secrets
 .env
 wandb/
 
+# Local scratch
 dumps/
+# Commands for starting the dev server
+startup.txt

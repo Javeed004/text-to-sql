@@ -107,15 +107,6 @@ Deploy on a free-tier host (Render/Railway/HF Spaces) — reuse deployment patte
 Build a minimal CLI or simple web form for manual testing/demo.
 Milestone/Deliverable: A live, callable endpoint + a working demo UI. Resume-ready achievement: "Deployed a self-hosted, quantized fine-tuned LLM as a production-style inference API."
 
-Phase 5 — Polish & Integrate
-Tasks:
-
-Write the README: problem statement, architecture diagram, before/after metrics table, how to reproduce.
-Record a short demo (Loom/GIF) showing a natural-language question turning into correct SQL + results.
-Wire this model in as a selectable backend in Track A's coding agent (same pattern as your RAG project's multi-provider LLM support).
-Update resume with final, real numbers (not placeholders).
-Milestone/Deliverable: Public GitHub repo, live demo link, resume bullet with real metrics, integration point with Track A.
-
 9. Risks / Things That Might Slow You Down
 Free GPU quota limits (Colab/Kaggle): budget for training runs to be interrupted; checkpoint frequently.
 Baseline might already be decent: some base models are already okay at SQL out of the box — if the improvement margin is small, lean on the quantization benchmarking and eval harness work as the differentiators instead.

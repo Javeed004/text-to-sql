@@ -65,9 +65,3 @@ The Q4_K_M model is now a callable service: `llama-server` behind a FastAPI laye
 - The executor is not production hardening: it does not bound memory use and has not been audited.
 - Schemas should follow the training format; other DDL styles are off-distribution.
 - Not run: a parallel-load test (for example 8 simultaneous requests) and a live check that the rate limit returns 429 against the running service. The middleware is covered by unit tests only. `MAX_INFLIGHT=4` matches the server's 4 slots, but 2 may suit a 2-CPU host and is untested.
-
-## Handoff to Phase 5
-
-- The service contract is `POST /generate` with `{schema, question, data_sql?, execute?}`. Track A can call it as a selectable backend.
-- README, demo recording and the final resume numbers are next. Use the measured figures above, and fill in the two TODO items first.
-- Interview answer: "I served the quantized model with llama.cpp behind FastAPI, rendering the exact training prompt by hand and verifying it byte-for-byte against the tokenizer. On 25 held-out questions the served SQL matched my offline evaluation on 23 to 24, with identical results where both ran. On CPU it takes about 3 to 5 seconds at the median, with a roughly 12 second tail. The limits I measured and wrote down are the CPU latency, the one-minute cold start, and that 25 examples can only show agreement, not accuracy."

@@ -259,4 +259,3 @@
 - `docs/serving.md` contains real measured numbers (no placeholders).
 - You can point to one limitation you found (memory, cold start, concurrency) and explain the decision you made because of it.
 
-**Connection to next task:** Phase 5 uses this live endpoint in the README and demo recording, and wires the same `/generate` API in as a selectable backend for Track A's coding agent.
